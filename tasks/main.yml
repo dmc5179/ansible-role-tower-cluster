@@ -1,2 +1,4 @@
 ---
 # tasks file for tower-cluster
+
+- include: instances.yml

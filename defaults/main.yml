@@ -1,2 +1,26 @@
 ---
 # defaults file for tower-cluster
+
+cluster_name: dan
+aws_secret_access_key:
+aws_access_key_id:
+ec2_key_name:
+ec2_key_file:
+
+vpc_id:
+ec2_instance_type: m5.xlarge
+ec2_ami:
+root_fs_size: 30
+root_fs_sc: gp2
+
+hosta_zone:
+hosta_subnet:
+hosta_security_group:
+
+hostb_zone:
+hostb_subnet:
+hostb_security_group:
+
+hostc_zone:
+hostc_subnet:
+hostc_security_group:
