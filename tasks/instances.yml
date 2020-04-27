@@ -4,14 +4,14 @@
   ec2:
     assign_public_ip: true
     ebs_optimized: true
-    instance_tags: '{"key":"Name","key":"{{cluster_name}-hosta"}'
+    instance_tags: '{"Name":"{{cluster_name}}-tower-hosta"}'
     instance_initiated_shutdown_behavior: "terminate"
     key_name: "{{ ec2_key_name }}"
     region: "{{ aws_region }}"
     zone: "{{ hosta_zone }}"
     group_id: "{{ hosta_security_group }}"
     instance_type: "{{ ec2_instance_type }}"
-    image: "{{ ami }}"
+    image: "{{ ec2_ami }}"
     wait: true
     count: 1
     vpc_subnet_id: "{{ hosta_subnet }}"
@@ -29,14 +29,14 @@
   ec2:
     assign_public_ip: true
     ebs_optimized: true
-    instance_tags: '{"key":"Name","key":"{{cluster_name}-hostb"}'
+    instance_tags: '{"Name":"{{cluster_name}}-tower-hostb"}'
     instance_initiated_shutdown_behavior: "terminate"
     key_name: "{{ ec2_key_name }}"
     region: "{{ aws_region }}"
     zone: "{{ hostb_zone }}"
     group_id: "{{ hostb_security_group }}"
     instance_type: "{{ ec2_instance_type }}"
-    image: "{{ ami }}"
+    image: "{{ ec2_ami }}"
     wait: true
     count: 1
     vpc_subnet_id: "{{ hostb_subnet }}"
@@ -54,14 +54,14 @@
   ec2:
     assign_public_ip: true
     ebs_optimized: true
-    instance_tags: '{"key":"Name","key":"{{cluster_name}-hostc"}'
+    instance_tags: '{"Name":"{{cluster_name}}-tower-hostc"}'
     instance_initiated_shutdown_behavior: "terminate"
     key_name: "{{ ec2_key_name }}"
     region: "{{ aws_region }}"
     zone: "{{ hostc_zone }}"
     group_id: "{{ hostc_security_group }}"
     instance_type: "{{ ec2_instance_type }}"
-    image: "{{ ami }}"
+    image: "{{ ec2_ami }}"
     wait: true
     count: 1
     vpc_subnet_id: "{{ hostc_subnet }}"
@@ -77,25 +77,50 @@
 # Create an in memory inventory of the tower cluster
 - name: Add host facts for host A
   add_host:
-    name: "{{cluster_name}}-tower-cluster-hosta"
+    name: "{{cluster_name}}_tower_cluster_hosta"
     ansible_host: "{{ ec2_hosta_instance['instances'][0]['public_dns_name'] }}"
     ansible_ssh_private_key_file: "{{ ec2_key_file }}"
     ansible_user: ec2-user
-    groups: "{{cluster_name}}-tower-cluster"
+    groups: "{{cluster_name}}_tower_cluster"
 
 - name: Add host facts for host B
   add_host:
-    name: "{{cluster_name}}-tower-cluster-hostb"
+    name: "{{cluster_name}}_tower_cluster_hostb"
     ansible_host: "{{ ec2_hostb_instance['instances'][0]['public_dns_name'] }}"
     ansible_ssh_private_key_file: "{{ ec2_key_file }}"
     ansible_user: ec2-user
-    groups: "{{cluster_name}}-tower-cluster"
+    groups: "{{cluster_name}}_tower_cluster"
 
 - name: Add host facts for host C
   add_host:
-    name: "{{cluster_name}}-tower-cluster-hostc"
+    name: "{{cluster_name}}_tower_cluster_hostc"
     ansible_host: "{{ ec2_hostc_instance['instances'][0]['public_dns_name'] }}"
     ansible_ssh_private_key_file: "{{ ec2_key_file }}"
     ansible_user: ec2-user
-    groups: "{{cluster_name}}-tower-cluster"
+    groups: "{{cluster_name}}_tower_cluster"
+
+- name: Wait 300 seconds for port 22 to become open and contain "OpenSSH" on host A/B/C
+  wait_for:
+    port: 22
+    host: '{{ item }}'
+    search_regex: OpenSSH
+    delay: 10
+  vars:
+    ansible_connection: local
+  with_items:
+    - "{{ ec2_hosta_instance['instances'][0]['public_dns_name'] }}"
+    - "{{ ec2_hostb_instance['instances'][0]['public_dns_name'] }}"
+    - "{{ ec2_hostc_instance['instances'][0]['public_dns_name'] }}"
+
+# TODO: Can we delegate to an in memory inventory group
+- name: Update packages on all hosts
+  delegate_to: "{{ item }}"
+  become: true
+  yum:
+    name: '*'
+    state: 'latest'
+  with_items:
+    - "{{cluster_name}}_tower_cluster_hosta"
+    - "{{cluster_name}}_tower_cluster_hostb"
+    - "{{cluster_name}}_tower_cluster_hostc"
 

@@ -1,0 +1,25 @@
+---
+# RDS
+
+- name: Deploy RDS PostgreSQL Instance
+  delegate_to: localhost
+  become: false
+  rds_instance:
+    id: "{{ cluster_name }}-tower-db"
+    state: present
+    engine: postgres
+    storage_encrypted: false
+    db_instance_class: db.t2.medium
+    username: "{{ pgsql_username }}"
+    password: "{{ pgsql_password }}"
+    allocated_storage: "{{ db_storage }}"
+    wait: true
+    multi_az: false
+    allow_major_version_upgrade: false
+    allow_minor_version_upgrade: true
+    aws_access_key: "{{ aws_access_key_id }}"
+    aws_secret_key: "{{ aws_secret_access_key }}"
+#   db_name:
+#   db_security_groups:
+#   db_subnet_group_name:
+ 

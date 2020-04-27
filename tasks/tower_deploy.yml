@@ -1,0 +1,15 @@
+---
+
+- name: Download and unarchive tower installer
+  delegate_to: localhost
+  become: false
+  unarchive:
+    src: "https://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-{{ tower_version }}.tar.gz"
+    dest: /tmp/ansible-tower-setup/
+
+- name: Deploy Tower Cluster
+  delegate_to: localhost
+  become: false
+  command: setup.sh
+  args:
+    chdir: /tmp/ansible-tower-setup

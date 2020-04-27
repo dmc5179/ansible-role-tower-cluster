@@ -1,26 +1,35 @@
 ---
 # defaults file for tower-cluster
 
-cluster_name: dan
-aws_secret_access_key:
-aws_access_key_id:
-ec2_key_name:
-ec2_key_file:
+tower_version: '3.6.4-1'
 
-vpc_id:
-ec2_instance_type: m5.xlarge
-ec2_ami:
+cluster_name: ''
+aws_secret_access_key: ''
+aws_access_key_id: ''
+ec2_key_name: ''
+ec2_key_file: ''
+
+vpc_id: ''
+ec2_instance_type: 'm5.xlarge'
+ec2_ami: ''
+aws_region: 'us-east-1'
 root_fs_size: 30
-root_fs_sc: gp2
+root_fs_sc: 'gp2'
 
-hosta_zone:
-hosta_subnet:
-hosta_security_group:
+hosta_zone: 'us-east-1a'
+hosta_subnet: ''
+hosta_security_group: ''
 
-hostb_zone:
-hostb_subnet:
-hostb_security_group:
+hostb_zone: 'us-east-1b'
+hostb_subnet: ''
+hostb_security_group: ''
 
-hostc_zone:
-hostc_subnet:
-hostc_security_group:
+hostc_zone: 'us-east-1c'
+hostc_subnet: ''
+hostc_security_group: ''
+
+
+db_storage: 30
+pgsql_username:
+pgsql_password:
+
