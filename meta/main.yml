@@ -1,0 +1,31 @@
+---
+galaxy_info:
+  playbook_name: tower-cluster
+  author: Dan Clark
+  description: Ansible role to standup an Ansible Tower cluster in AWS
+  company: Red Hat
+
+  license: GPLv3
+
+  min_ansible_version: 2.2
+
+  platforms:
+    - name: EL
+      versions:
+        - 7
+        - 8
+    - name: Fedora
+      versions:
+        - 31
+    - name: Amazon
+      versions:
+        - "2017.12"
+
+  galaxy_tags:
+    - aws
+    - tower
+    - cluster
+    - ansible
+
+
+dependencies: []
