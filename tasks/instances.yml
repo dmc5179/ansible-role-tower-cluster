@@ -23,6 +23,12 @@
     aws_access_key: "{{ aws_access_key_id }}"
     aws_secret_key: "{{ aws_secret_access_key }}"
   register: ec2_hosta_instance
+#  tags: hosta
+
+#- name: Debug
+#  debug:
+#    msg: "{{ ec2_hosta_instance }}"
+#  tags: hosta
 
 - name: Create Host B
   delegate_to: localhost

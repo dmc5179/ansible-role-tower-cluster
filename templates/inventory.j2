@@ -1,16 +1,16 @@
 [tower]
-{{ ec2_hosta_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hosta_instance['instances'][0]['PrivateIpAddress'] }}
-{{ ec2_hostb_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hostb_instance['instances'][0]['PrivateIpAddress'] }}
-{{ ec2_hostc_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hostc_instance['instances'][0]['PrivateIpAddress'] }}
+{{ ec2_hosta_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hosta_instance['instances'][0]['private_ip'] }}
+{{ ec2_hostb_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hostb_instance['instances'][0]['private_ip'] }}
+{{ ec2_hostc_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hostc_instance['instances'][0]['private_ip'] }}
 
 [database]
-hostDB
+{{ tower_db_instance['DBInstances'[0]['Endpoint']['Address'] }}
 
 
 [all:vars]
 admin_password="{{ tower_admin_password }}"
 
-pg_host='hostDB'
+pg_host="{{ tower_db_instance['DBInstances'[0]['Endpoint']['Address'] }}""
 pg_port="{{ pg_port }}"
 
 pg_database="{{ pg_database }}"
@@ -27,3 +27,11 @@ rabbitmq_vhost="{{ rabbitmq_vhost }}"
 # Isolated Tower nodes automatically generate an RSA key for authentication;
 # To disable this behavior, set this value to false
 isolated_key_generation=false
+
+ansible_ssh_private_key_file={{ ec2_key_file }}
+ansible_connection=ssh
+ansible_user=ec2-user
+ansible_become=yes
+ansible_become_method=sudo
+ansible_become_user=root
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
