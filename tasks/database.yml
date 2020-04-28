@@ -10,16 +10,23 @@
     engine: postgres
     storage_encrypted: false
     db_instance_class: db.t2.medium
-    username: "{{ pgsql_username }}"
-    password: "{{ pgsql_password }}"
+    username: "{{ pg_username }}"
+    password: "{{ pg_password }}"
+    port: "{{pg_port }}"
     allocated_storage: "{{ db_storage }}"
+    storage_type: gp2
     wait: true
     multi_az: false
+    region: "{{ aws_region }}"
+    vpc_security_group_ids: "{{ db_security_group }}"
     allow_major_version_upgrade: false
-    allow_minor_version_upgrade: true
+#    allow_minor_version_upgrade: true
     aws_access_key: "{{ aws_access_key_id }}"
     aws_secret_key: "{{ aws_secret_access_key }}"
+    tags:
+      Name: "{{ cluster_name }}-tower"
 #   db_name:
 #   db_security_groups:
 #   db_subnet_group_name:
+  register: tower_db_instance
  

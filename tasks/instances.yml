@@ -81,7 +81,7 @@
     ansible_host: "{{ ec2_hosta_instance['instances'][0]['public_dns_name'] }}"
     ansible_ssh_private_key_file: "{{ ec2_key_file }}"
     ansible_user: ec2-user
-    groups: "{{cluster_name}}_tower_cluster"
+    group: "{{cluster_name}}_tower_cluster"
 
 - name: Add host facts for host B
   add_host:
@@ -89,7 +89,7 @@
     ansible_host: "{{ ec2_hostb_instance['instances'][0]['public_dns_name'] }}"
     ansible_ssh_private_key_file: "{{ ec2_key_file }}"
     ansible_user: ec2-user
-    groups: "{{cluster_name}}_tower_cluster"
+    group: "{{cluster_name}}_tower_cluster"
 
 - name: Add host facts for host C
   add_host:
@@ -97,7 +97,7 @@
     ansible_host: "{{ ec2_hostc_instance['instances'][0]['public_dns_name'] }}"
     ansible_ssh_private_key_file: "{{ ec2_key_file }}"
     ansible_user: ec2-user
-    groups: "{{cluster_name}}_tower_cluster"
+    group: "{{cluster_name}}_tower_cluster"
 
 - name: Wait 300 seconds for port 22 to become open and contain "OpenSSH" on host A/B/C
   wait_for:
@@ -113,14 +113,14 @@
     - "{{ ec2_hostc_instance['instances'][0]['public_dns_name'] }}"
 
 # TODO: Can we delegate to an in memory inventory group
-- name: Update packages on all hosts
-  delegate_to: "{{ item }}"
-  become: true
-  yum:
-    name: '*'
-    state: 'latest'
-  with_items:
-    - "{{cluster_name}}_tower_cluster_hosta"
-    - "{{cluster_name}}_tower_cluster_hostb"
-    - "{{cluster_name}}_tower_cluster_hostc"
+#- name: Update packages on all hosts
+#  delegate_to: "{{ item }}"
+#  become: true
+#  yum:
+#    name: '*'
+#    state: 'latest'
+#  with_items:
+#    - "{{cluster_name}}_tower_cluster_hosta"
+#    - "{{cluster_name}}_tower_cluster_hostb"
+#    - "{{cluster_name}}_tower_cluster_hostc"
 

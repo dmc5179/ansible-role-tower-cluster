@@ -28,8 +28,19 @@ hostc_zone: 'us-east-1c'
 hostc_subnet: ''
 hostc_security_group: ''
 
+tower_admin_password: ''
 
 db_storage: 30
-pgsql_username:
-pgsql_password:
+db_security_group: ''
+pg_port: 5432
+
+pg_database: 'awx'
+pg_username: 'awx'
+pg_password: 'PgStrongPassword'
+
+rabbitmq_username: 'tower'
+rabbitmq_password: 'RabbitmqPassword'
+rabbitmq_cookie: 'cookiemonster'
+rabbitmq_port: 5672
+rabbitmq_vhost: 'tower'
 
