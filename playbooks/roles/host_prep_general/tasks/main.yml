@@ -1,9 +1,8 @@
 ---
 - name: Update all packages
-  yum:
+  package:
     name: "*"
     state: latest
-    exclude: atomic-openshift-ansible*,openshift-ansible*
   retries: 3 # This seems to fail sometimes, so lets retry before failing everything
   until: update_all_packages.rc == 0
   register: update_all_packages
@@ -28,7 +27,7 @@
   when: "'kernel' in update_all_packages.results"
 
 - name: Install preferred packages
-  yum:
+  package:
     name:
       - vim
       - screen

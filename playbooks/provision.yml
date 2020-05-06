@@ -2,11 +2,11 @@
 - hosts: localhost
   roles:
     - provision_aws
-#    - host_facts_aws
+    - host_facts_aws
 
-#- hosts: tower_cluster_{{ hostvars.localhost.cluster_group_name }}
-#  any_errors_fatal: true
-#  roles:
-#    - rhsm_subscribe
-#    - host_prep_general
+- hosts: tower_cluster_{{ hostvars.localhost.cluster_group_name }}
+  any_errors_fatal: true
+  roles:
+    - rhsm_subscribe
+    - host_prep_general
 

@@ -9,4 +9,3 @@ all:
       vars:
         ansible_user: ec2-user
         provision_type: aws
-

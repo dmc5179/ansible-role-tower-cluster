@@ -16,6 +16,32 @@
     state: present
   register: ec2_create_security_group_ssh
 
+- name: Create tower security group
+  ec2_group:
+    name: "{{ cluster_name_verbose }}-tower"
+    description: "{{ cluster_name_verbose }}-tower"
+    vpc_id: "{{ ec2_vpc_id }}"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        cidr_ip: 0.0.0.0/0
+        ports: 443
+      - proto: tcp
+        cidr_ip: 0.0.0.0/0
+        ports: 8443
+      - proto: tcp
+        cidr_ip: 0.0.0.0/0
+        ports: 80
+      - proto: tcp
+        cidr_ip: 0.0.0.0/0
+        ports: 8080
+    tags:
+      Name: "{{ cluster_name_verbose }}-tower"
+      TowerClusterName: "{{ cluster_name }}"
+      TowerClusterNameVerbose: "{{ cluster_name_verbose }}"
+    state: present
+  register: ec2_create_security_group_tower
+
 - name: Create database security group
   ec2_group:
     name: "{{ cluster_name_verbose }}-database"
