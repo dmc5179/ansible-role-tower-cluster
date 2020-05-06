@@ -1,1 +1,4 @@
 *.swp
+vars/aws.yml
+vars/aws.env
+ansible.log
