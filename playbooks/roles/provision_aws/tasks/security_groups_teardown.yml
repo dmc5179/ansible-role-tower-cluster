@@ -1,6 +1,6 @@
 ---
 - name: Find security groups
-  ec2_group_facts:
+  ec2_group_info:
     region: "{{ aws_region }}"
     filters:
       tag:TowerClusterName: "{{ cluster_name }}"

@@ -1,6 +1,6 @@
 ---
 - name: Find VPC
-  ec2_vpc_net_facts:
+  ec2_vpc_net_info:
     region: "{{ aws_region }}"
     filters:
       tag:TowerClusterName: "{{ cluster_name }}"
@@ -13,7 +13,7 @@
   when: (ec2_find_vpc.vpcs | length) > 0
 
 - name: Find subnets
-  ec2_vpc_subnet_facts:
+  ec2_vpc_subnet_info:
     region: "{{ aws_region }}"
     filters:
       vpc-id: "{{ ec2_vpc_id }}"
