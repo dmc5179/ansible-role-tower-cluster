@@ -12,10 +12,10 @@
     db_instance_class: db.t2.medium
     username: "{{ pg_username }}"
     password: "{{ pg_password }}"
-    port: "{{pg_port }}"
+    port: "{{ pg_port }}"
     allocated_storage: "{{ db_storage }}"
     storage_type: gp2
-    wait: true
+    wait: false
     multi_az: false
     region: "{{ aws_region }}"
     vpc_security_group_ids: "{{ db_security_group }}"
@@ -31,3 +31,11 @@
 #   db_subnet_group_name:
   register: tower_db_instance
  
+# Check for 10 minutes after initial 5 minute wait
+- name: Wait for RDS instance to come online (10 minutes check after 5 minute initial wait)
+  wait_for:
+    port: "{{ pg_port }}"
+    timeout: 600
+    sleep: 10
+    delay: 300
+    host: "{{ tower_db_instance['DBInstances'[0]['Endpoint']['Address'] }}"
