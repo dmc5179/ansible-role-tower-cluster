@@ -1,0 +1,46 @@
+---
+# defaults file for tower-cluster
+
+tower_version: '3.6.4-1'
+
+cluster_name: 'dan'
+aws_secret_access_key: 'bT5k8mYyCZ0p159xpEWCWhrn3dJqQvWgSG3Y8qze'
+aws_access_key_id: 'AKIA3IQTD3JCH7RFGAQE'
+ec2_key_name: 'danclark-useast-2'
+ec2_key_file: '/home/danclark/.ssh/danclark-useast-2.pem'
+
+vpc_id: 'vpc-1dbe0067'
+ec2_instance_type: 'm5.xlarge'
+ec2_ami: ''
+aws_region: 'us-east-1'
+root_fs_size: 30
+root_fs_sc: 'gp2'
+
+hosta_zone: 'us-east-1a'
+hosta_subnet: 'subnet-9386efbd'
+hosta_security_group: 'sg-06cc50f636bf0d84a'
+
+hostb_zone: 'us-east-1b'
+hostb_subnet: 'subnet-78c4f632'
+hostb_security_group: 'sg-06cc50f636bf0d84a'
+
+hostc_zone: 'us-east-1c'
+hostc_subnet: 'subnet-b8e48be4'
+hostc_security_group: 'sg-06cc50f636bf0d84a'
+
+tower_admin_password: 'redhat2020'
+
+db_storage: 30
+db_security_group: 'sg-06cc50f636bf0d84a'
+pg_port: 5432
+
+pg_database: 'awx'
+pg_username: 'awx'
+pg_password: 'PgStrongPassword'
+
+rabbitmq_username: 'tower'
+rabbitmq_password: 'RabbitmqPassword'
+rabbitmq_cookie: 'cookiemonster'
+rabbitmq_port: 5672
+rabbitmq_vhost: 'tower'
+

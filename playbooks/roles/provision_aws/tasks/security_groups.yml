@@ -1,0 +1,53 @@
+---
+- name: Create SSH security group
+  ec2_group:
+    name: "{{ cluster_name_verbose }}-ssh"
+    description: "{{ cluster_name_verbose }}-ssh"
+    vpc_id: "{{ ec2_vpc_id }}"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        cidr_ip: 0.0.0.0/0
+        ports: 22
+    tags:
+      Name: "{{ cluster_name_verbose }}-ssh"
+      TowerClusterName: "{{ cluster_name }}"
+      TowerClusterNameVerbose: "{{ cluster_name_verbose }}"
+    state: present
+  register: ec2_create_security_group_ssh
+
+- name: Create database security group
+  ec2_group:
+    name: "{{ cluster_name_verbose }}-database"
+    description: "{{ cluster_name_verbose }}-database"
+    vpc_id: "{{ ec2_vpc_id }}"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: tcp
+        cidr_ip: 0.0.0.0/0
+        ports: 5432
+    tags:
+      Name: "{{ cluster_name_verbose }}-database"
+      TowerClusterName: "{{ cluster_name }}"
+      TowerClusterNameVerbose: "{{ cluster_name_verbose }}"
+    state: present
+  register: ec2_create_security_group_database
+
+# Removed this SG
+#  register: ec2_create_security_group_infra
+
+- name: Create cluster security group
+  ec2_group:
+    name: "{{ cluster_name_verbose }}-cluster"
+    description: "{{ cluster_name_verbose }}-cluster"
+    vpc_id: "{{ ec2_vpc_id }}"
+    region: "{{ aws_region }}"
+    rules:
+      - proto: all
+        group_name: "{{ cluster_name_verbose }}-cluster"
+    tags:
+      Name: "{{ cluster_name_verbose }}-cluster"
+      TowerClusterName: "{{ cluster_name }}"
+      TowerClusterNameVerbose: "{{ cluster_name_verbose }}"
+    state: present
+  register: ec2_create_security_group_cluster

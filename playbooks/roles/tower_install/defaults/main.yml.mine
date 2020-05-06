@@ -1,0 +1,35 @@
+---
+# defaults file for tower-cluster
+
+tower_version: '3.6.4-1'
+
+cluster_name: 'dan'
+aws_secret_access_key: 'c3SQQeMgKH6uhG+Tl5giLMGeHrOfLg64M/pIks6Q'
+aws_access_key_id: 'AKIA2SWOAAE76BOCCYLH'
+ec2_key_name: 'danclark'
+ec2_key_file: '/home/danclark/.ssh/danclark.pem'
+
+vpc_id: 'vpc-00e6d1fcb0697719e'
+ec2_instance_type: 'm5.xlarge'
+ec2_ami: 'ami-0015fcaa5516c75ed'
+aws_region: 'us-east-1'
+root_fs_size: 30
+root_fs_sc: 'gp2'
+
+hosta_zone: 'us-east-1a'
+hosta_subnet: 'subnet-0bb00af16995ee41c'
+hosta_security_group: 'sg-0e4903f7db09eab39'
+
+hostb_zone: 'us-east-1b'
+hostb_subnet: 'subnet-0b1e3a099bb7aedf3'
+hostb_security_group: 'sg-0e4903f7db09eab39'
+
+hostc_zone: 'us-east-1c'
+hostc_subnet: 'subnet-041ac69fffc805236'
+hostc_security_group: 'sg-0e4903f7db09eab39'
+
+
+db_storage: 30
+pgsql_username:
+pgsql_password:
+

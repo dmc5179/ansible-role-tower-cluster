@@ -1,0 +1,23 @@
+---
+cluster_name: 
+
+app_node_count: 2
+
+# The email address to use when generating Lets Encrypt certs for the cluster.
+cert_email_address: 
+
+# The AWS region (i.e. `us-east-1`)
+aws_region: us-east-1
+# If you have Cloud Access setup for your account, set this to `cloud_access`. Otherwise, set this to `hourly`.
+ec2_ami_type: cloud_access
+# The ID of the Route53 hosted zone
+route53_hosted_zone_id: 
+
+# Your RHSM username
+rhsm_username: 
+# Your RHSM password
+rhsm_password: 
+# The RHSM pool ID
+rhsm_pool: 
+
+
