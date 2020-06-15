@@ -103,7 +103,7 @@
 
 # NOTE: The _odd_ syntax for the tags is due to needing to have
 # a variable name in the tag key.
-- name: Add Kubernetes cluster tag to instances
+- name: Add Tower cluster tag to instances
   ec2_tag:
     region: "{{ aws_region }}"
     resource: "{{ item }}"
@@ -115,13 +115,14 @@
     - "{{ ec2_create_tower_instance_ids }}"
     - "{{ ec2_create_database_instance_ids }}"
 
-- name: Create elastic IP for tower instance
+- name: Create elastic IP for tower instances
   ec2_eip:
-    device_id: "{{ ec2_create_tower_instance_ids[0] }}"
+    device_id: "{{ item }}"
     region: "{{ aws_region }}"
     state: present
     in_vpc: true
-  when: ec2_create_tower_instance_ids | length == 1
+  with_items:
+    - "{{ ec2_create_tower_instance_ids }}"
 
 - name: Create elastic IP for database instance
   ec2_eip:

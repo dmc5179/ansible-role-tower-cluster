@@ -1,9 +1,5 @@
 ---
 # tasks file for tower-cluster
 
-- include: instances.yml
-
-- include: database.yml
-
 - include: tower_deploy.yml
 
