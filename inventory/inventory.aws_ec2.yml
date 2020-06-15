@@ -13,6 +13,9 @@ keyed_groups:
     key: tags.TowerRole
   - prefix: tower_cluster
     key: tags.TowerClusterNameVerbose
+  - prefiex: tower_database
+    key: tags.TowerDatabase
 
 groups:
-  tower_nodes: tags.TowerRole in ['tower', 'database']
+  tower_nodes: tags.TowerRole in ['tower']
+  database_nodes: tags.TowerRole in ['database']
