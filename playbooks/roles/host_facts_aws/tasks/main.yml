@@ -2,13 +2,15 @@
 - name: Refresh inventory to update EC2 instances information
   meta: refresh_inventory
 
-- name: Add host facts to Tower nodes
+- name: Add host facts for Tower nodes
   add_host:
     name: "{{ item }}"
     ansible_host: "{{ hostvars[item].public_ip_address }}"
     ansible_ssh_private_key_file: "{{ ec2_key_file }}"
     rhsm_consumer_name: "{{ hostvars[item].tags.Name }}"
-  with_items: "{{ groups.tower_nodes | intersect(groups['tower_cluster_' + cluster_group_name]) }}"
+  with_items: 
+    - "{{ groups.tower_nodes | intersect(groups['tower_cluster_' + cluster_group_name]) }}"
+    - "{{ groups.database_nodes | intersect(groups['tower_cluster_' + cluster_group_name]) }}"
   changed_when: no
 
 - name: Wait for nodes to boot
@@ -17,4 +19,7 @@
     port: 22
     search_regex: OpenSSH
   delegate_to: localhost
-  with_items: "{{ groups.tower_nodes | intersect(groups['tower_cluster_' + cluster_group_name]) }}"
+  with_items:
+    - "{{ groups.tower_nodes | intersect(groups['tower_cluster_' + cluster_group_name]) }}"
+    - "{{ groups.database_nodes | intersect(groups['tower_cluster_' + cluster_group_name]) }}"
+
