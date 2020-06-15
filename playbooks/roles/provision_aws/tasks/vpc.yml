@@ -17,7 +17,7 @@
     ec2_vpc_id: "{{ ec2_create_vpc.vpc.id }}"
 
 - name: Find default route table
-  ec2_vpc_route_table_facts:
+  ec2_vpc_route_table_info:
     region: "{{ aws_region }}"
     filters:
       vpc-id: "{{ ec2_vpc_id }}"
