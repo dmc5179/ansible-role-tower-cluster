@@ -10,3 +10,6 @@
     - rhsm_subscribe
     - host_prep_general
 
+- hosts: localhost
+  roles:
+    - tower_install
