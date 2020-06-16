@@ -15,9 +15,10 @@
     dest: '/tmp/ansible-tower-setup-{{ tower_version }}/inventory'
     mode: '0644'
 
-#- name: Deploy Tower Cluster
-#  delegate_to: localhost
-#  become: false
-#  command: setup.sh
-#  args:
-#    chdir: "/tmp/ansible-tower-setup-{{ tower_version }}"
+- name: Deploy Tower Cluster
+  delegate_to: localhost
+  become: false
+  shell:
+    cmd: ./setup.sh 2>&1 > /tmp/tower_install.log
+#    executable: /bin/bash
+    chdir: "/tmp/ansible-tower-setup-{{ tower_version }}"

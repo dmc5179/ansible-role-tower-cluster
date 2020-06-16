@@ -1,37 +1,33 @@
 [tower]
-{{ ec2_hosta_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hosta_instance['instances'][0]['private_ip'] }}
-{{ ec2_hostb_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hostb_instance['instances'][0]['private_ip'] }}
-{{ ec2_hostc_instance['instances'][0]['public_dns_name'] }} rabbitmq_host={{ ec2_hostc_instance['instances'][0]['private_ip'] }}
+{{ tower_nodes[0].hostname }} rabbitmq_host={{ tower_nodes[0].rabbitmq_host }}
+{{ tower_nodes[1].hostname }} rabbitmq_host={{ tower_nodes[1].rabbitmq_host }}
+{{ tower_nodes[2].hostname }} rabbitmq_host={{ tower_nodes[2].rabbitmq_host }}
 
 [database]
-{{ tower_db_instance['DBInstances'[0]['Endpoint']['Address'] }}
-
+{{ pg_host }}
 
 [all:vars]
-admin_password="{{ tower_admin_password }}"
-
-pg_host="{{ tower_db_instance['DBInstances'[0]['Endpoint']['Address'] }}""
-pg_port="{{ pg_port }}"
-
-pg_database="{{ pg_database }}"
-pg_username="{{ pg_username }}"
-pg_password="{{ pg_password }}"
-
-rabbitmq_username="{{ rabbitmq_username }}"
-rabbitmq_password="{{ rabbitmq_password }}"
-rabbitmq_cookie="{{ rabbitmq_cookie }}"
-rabbitmq_port="{{ rabbitmq_port }}"
-rabbitmq_vhost="{{ rabbitmq_vhost }}"
-
-
-# Isolated Tower nodes automatically generate an RSA key for authentication;
-# To disable this behavior, set this value to false
-isolated_key_generation=false
-
 ansible_ssh_private_key_file={{ ec2_key_file }}
 ansible_connection=ssh
 ansible_user=ec2-user
 ansible_become=yes
 ansible_become_method=sudo
-ansible_become_user=root
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+#ansible_become_user=root
+ansible_ssh_extra_args='-o StrictHostKeyChecking=no'
+
+tower_firewall_type={{ tower_firewall_type }}
+
+admin_password={{ admin_password }}
+
+pg_host={{ pg_host }}
+pg_port='{{ pg_port }}'
+
+pg_database={{ pg_database }}
+pg_username={{ pg_username }}
+pg_password={{ pg_password }}
+pg_sslmode='prefer'  # set to 'verify-full' for client-side enforced SSL
+
+rabbitmq_username={{ rabbitmq_username }}
+rabbitmq_password={{ rabbitmq_password }}
+rabbitmq_cookie={{ rabbitmq_cookie }}
+
