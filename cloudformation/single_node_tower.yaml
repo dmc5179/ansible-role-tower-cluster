@@ -117,7 +117,8 @@ Resources:
             # Install Ansible Tower
             ./setup.sh
           - admin_password: !Ref 'TowerAdminPassword'
-          - database_admin_password: !Ref 'DatabaseAdminPassword'
+            database_admin_password: !Ref 'DatabaseAdminPassword'
+
   TowerIPAddress:
     Type: AWS::EC2::EIP
 
