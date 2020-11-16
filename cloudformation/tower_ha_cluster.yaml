@@ -31,14 +31,17 @@ Parameters:
   PublicSubnet:
     Description: Public Subnet in AZ 1
     Type: AWS::EC2::Subnet::Id
+    Default: 'subnet-a'
 
   PublicSubnet2:
     Description: Public Subnet in AZ 2
     Type: AWS::EC2::Subnet::Id
+    Default: 'subnet-b'
 
   PublicSubnet3:
     Description: Public Subnet in AZ 3
     Type: AWS::EC2::Subnet::Id
+    Default: 'subnet-c'
 
   InstanceType:
     Default: t2.large
@@ -104,6 +107,9 @@ Resources:
         Fn::Base64: !Sub
           - |
             #!/bin/bash -xe
+
+            # Install EPEL for Ansible
+            dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
             # Ensure Ansible is installed
             dnf -y install ansible
@@ -175,7 +181,7 @@ Resources:
   TowerTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckEnabled: false
+      HealthCheckEnabled: true
       Name: TowerTargets
       Port: '443'
       Protocol: 'TCP'
@@ -196,8 +202,6 @@ Resources:
       IpAddressType: 'ipv4'
       Name: 'TowerLoadBalancer'
       Scheme: 'internet-facing'
-      SecurityGroups:
-      - !Ref 'TowerExternalSecurityGroup'
       Subnets:
         - !Ref PublicSubnet
         - !Ref PublicSubnet2
@@ -207,11 +211,13 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
-        Type: forward
-        TargetGroupArn: !Ref 'TowerTargetGroup'
-      LoadBalancerArn: !Ref 'TowerLoadBalancer'
-      Port: '443'
-      Protocol: 'TCP'
+      - Type: forward
+        TargetGroupArn:
+          Ref: TowerTargetGroup
+      LoadBalancerArn:
+        Ref: TowerLoadBalancer
+      Port: 443
+      Protocol: TCP
 
   TowerDNSRecord:
     Type: AWS::Route53::RecordSet
