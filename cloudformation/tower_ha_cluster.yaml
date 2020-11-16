@@ -80,12 +80,10 @@ Resources:
           ToPort: 443
           FromPort: 443
           CidrIp: 0.0.0.0/0
-#        - IpProtocol: "-1"
-#          #GroupId: !GetAttr 'Vpc.DefaultSecurityGroup'
-#          GroupId: default
-#          ToPort: 65535
-#          FromPort: 0
-#          #CidrIp: 0.0.0.0/0
+        - IpProtocol: "-1"
+          SourceSecurityGroupName: default
+          ToPort: 65535
+          FromPort: 0
       VpcId: !Ref 'VpcId'
 
   TowerInstance:
@@ -198,7 +196,8 @@ Resources:
       IpAddressType: 'ipv4'
       Name: 'TowerLoadBalancer'
       Scheme: 'internet-facing'
-      SecurityGroups: !Ref 'TowerExternalSecurityGroup'
+      SecurityGroups:
+      - !Ref 'TowerExternalSecurityGroup'
       Subnets:
         - !Ref PublicSubnet
         - !Ref PublicSubnet2
@@ -214,13 +213,13 @@ Resources:
       Port: '443'
       Protocol: 'TCP'
 
-#  TowerDNSRecord:
-#    Type: AWS::Route53::RecordSet
-#    Properties:
-#      HostedZoneId: !Ref 'HostedZoneId'
-#      Comment: Tower Instance.
-#      Name: !Join ['', ["tower.", !Ref 'HostedZoneName']]
-#      Type: A
-#      TTL: '900'
-#      ResourceRecords:
-#      - !GetAttr 'TowerLoadBalancer.DNSName'
+  TowerDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref 'HostedZoneId'
+      Comment: Tower Instance.
+      Name: !Join [ '', [ "tower.", !Ref 'HostedZoneName' ] ]
+      Type: CNAME
+      TTL: '900'
+      ResourceRecords:
+      - !GetAtt TowerLoadBalancer.DNSName
