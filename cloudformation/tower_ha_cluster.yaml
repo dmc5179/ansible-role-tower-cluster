@@ -5,13 +5,9 @@ Description: Create Ansible Tower 3 Node HA Cluster
 
 Parameters:
 
-#  VpcId:
-#    Description: The VPC-scoped resources will belong to this VPC.
-#    Type: AWS::EC2::VPC::Id
-
-  Vpc:
+  VpcId:
     Description: The VPC-scoped resources will belong to this VPC.
-    Type: AWS::EC2::VPC
+    Type: AWS::EC2::VPC::Id
 
   HostedZoneId:
     Description: The Route53 public zone ID to register the targets with, such as Z21IXYZABCZ2A4.
@@ -84,13 +80,13 @@ Resources:
           ToPort: 443
           FromPort: 443
           CidrIp: 0.0.0.0/0
-        - IpProtocol: "-1"
-          #GroupId: !GetAttr 'Vpc.DefaultSecurityGroup'
-          GroupId: default
-          ToPort: 65535
-          FromPort: 0
-          #CidrIp: 0.0.0.0/0
-      VpcId: !Ref 'Vpc'
+#        - IpProtocol: "-1"
+#          #GroupId: !GetAttr 'Vpc.DefaultSecurityGroup'
+#          GroupId: default
+#          ToPort: 65535
+#          FromPort: 0
+#          #CidrIp: 0.0.0.0/0
+      VpcId: !Ref 'VpcId'
 
   TowerInstance:
     Type: AWS::EC2::Instance
@@ -132,16 +128,11 @@ Resources:
 
             sed -i "s|pg_password.*|pg_password='$PG_PASSWORD'|" inventory
 
-            echo "Instance 2: ${tower_instance_2_ip}" >> inventory
-            echo "Instance 3: ${tower_instance_3_ip}" >> inventory
-
             # Install Ansible Tower
             #./setup.sh
 
           - admin_password: !Ref 'TowerAdminPassword'
             database_admin_password: !Ref 'DatabaseAdminPassword'
-            #tower_instance_2_ip: !GetAttr 'TowerInstance2.PrivateIp'
-            #tower_instance_3_ip: !GetAttr 'TowerInstance3.PrivateIp'
 
   TowerInstance2:
     Type: AWS::EC2::Instance
@@ -149,20 +140,19 @@ Resources:
       ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", HVM64]
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
-      AvailabilityZone: !Join ['', [!Ref 'AWS::Region', "b"]]
+      #AvailabilityZone: !Join [ '', [ !Ref 'AWS::Region', "b" ] ]
       NetworkInterfaces:
         - AssociatePublicIpAddress: "true"
           DeviceIndex: "0"
           GroupSet:
-            - !Ref "TowerExternalSecurityGroup"
+          - !Ref "TowerExternalSecurityGroup"
           SubnetId: !Ref "PublicSubnet2"
       UserData:
-        Fn::Base64: !Sub
-          - |
-            #!/bin/bash -xe
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
 
-            # Ensure Ansible is installed
-            dnf -y install ansible
+          # Ensure Ansible is installed
+          dnf -y install ansible
 
   TowerInstance3:
     Type: AWS::EC2::Instance
@@ -178,13 +168,11 @@ Resources:
             - !Ref "TowerExternalSecurityGroup"
           SubnetId: !Ref "PublicSubnet3"
       UserData:
-        Fn::Base64: !Sub
-          - |
-            #!/bin/bash -xe
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
 
-            # Ensure Ansible is installed
-            dnf -y install ansible
-
+          # Ensure Ansible is installed
+          dnf -y install ansible
 
   TowerTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -201,7 +189,7 @@ Resources:
           Port: 443
         - Id: !Ref 'TowerInstance3'
           Port: 443
-      VpcId: !Ref 'Vpc'
+      VpcId: !Ref 'VpcId'
 
   TowerLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -226,13 +214,13 @@ Resources:
       Port: '443'
       Protocol: 'TCP'
 
-  TowerDNSRecord:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      HostedZoneId: !Ref 'HostedZoneId'
-      Comment: Tower Instance.
-      Name: !Join ['', ["tower.", !Ref 'HostedZoneName']]
-      Type: A
-      TTL: '900'
-      ResourceRecords:
-        - !Ref 'TowerLoadBalancer.DNSName'
+#  TowerDNSRecord:
+#    Type: AWS::Route53::RecordSet
+#    Properties:
+#      HostedZoneId: !Ref 'HostedZoneId'
+#      Comment: Tower Instance.
+#      Name: !Join ['', ["tower.", !Ref 'HostedZoneName']]
+#      Type: A
+#      TTL: '900'
+#      ResourceRecords:
+#      - !GetAttr 'TowerLoadBalancer.DNSName'
