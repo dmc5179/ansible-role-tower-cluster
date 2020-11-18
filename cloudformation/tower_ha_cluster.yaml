@@ -12,6 +12,7 @@ Parameters:
   HostedZoneId:
     Description: The Route53 public zone ID to register the targets with, such as Z21IXYZABCZ2A4.
     Type: String
+    Default: ''
 
   HostedZoneName:
     Description: The Route53 zone to register the targets with, such as example.com. Omit the trailing period.
@@ -28,20 +29,30 @@ Parameters:
     Type: String
     Default: "redhat2020"
 
+  RabbitMQPassword:
+    Description: RabbitMQ Password. No special characters.
+    Type: String
+    Default: "redhat2020"
+
+  RabbitMQCookie:
+    Description: RabbitMQ Cookie. No special characters.
+    Type: String
+    Default: "cookiemonster"
+
   PublicSubnet:
     Description: Public Subnet in AZ 1
     Type: AWS::EC2::Subnet::Id
-    Default: 'subnet-a'
+    Default: ''
 
   PublicSubnet2:
     Description: Public Subnet in AZ 2
     Type: AWS::EC2::Subnet::Id
-    Default: 'subnet-b'
+    Default: ''
 
   PublicSubnet3:
     Description: Public Subnet in AZ 3
     Type: AWS::EC2::Subnet::Id
-    Default: 'subnet-c'
+    Default: ''
 
   InstanceType:
     Default: t2.large
@@ -70,6 +81,45 @@ Mappings:
 
 Resources:
 
+  PrivateKey:
+    Type: Custom::RSAKey
+    Properties:
+      Name: /demo/private-key
+      KeyAlias: alias/aws/ssm
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-secret-provider'
+
+#######
+
+
+  SSMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: ssmget
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'ssm:GetParameter'
+                Resource: '*'
+
+  TowerInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref SSMRole
+
   TowerExternalSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -89,14 +139,34 @@ Resources:
           FromPort: 0
       VpcId: !Ref 'VpcId'
 
+  TowerDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: 'awx'
+      Engine: postgres
+      EngineVersion: '10.14'
+      MasterUsername: 'awx'
+      DBInstanceClass: "db.t3.small"
+      DBInstanceIdentifier: "tower"
+      PubliclyAccessible: true
+      StorageType: "gp2"
+      SourceRegion:
+        Ref: AWS::Region
+      VPCSecurityGroups:
+      - Ref: TowerExternalSecurityGroup
+      AllocatedStorage: 30
+      MasterUserPassword:
+        Ref: DatabaseAdminPassword
+
   TowerInstance:
     Type: AWS::EC2::Instance
-    DependsOn: ['TowerInstance2', 'TowerInstance3']
+    DependsOn: ['TowerInstance2', 'TowerInstance3', 'PrivateKey', 'TowerDBInstance']
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", HVM64]
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       AvailabilityZone: !Join ['', [!Ref 'AWS::Region', "a"]]
+      IamInstanceProfile: !Ref TowerInstanceProfile
       NetworkInterfaces:
         - AssociatePublicIpAddress: "true"
           DeviceIndex: "0"
@@ -112,7 +182,17 @@ Resources:
             dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 
             # Ensure Ansible is installed
-            dnf -y install ansible
+            dnf -y install ansible python3 python3-pip
+            python3 -m pip install --upgrade pip
+            python3 -m pip install awscli
+
+            PKEY=$(/usr/local/bin/aws --region=${region} ssm get-parameter --name /demo/private-key --with-decryption --query Parameter.Value --output text)
+
+            # Configure Cluster SSH keys
+            echo "$PKEY" > /home/ec2-user/.ssh/tower_rsa
+            echo "${pubkey}" > /home/ec2-user/.ssh/tower_rsa.pub
+            echo "${pubkey}" >> /home/ec2-user/.ssh/authorized_keys
+            chown ec2-user.ec2-user /home/ec2-user/.ssh/tower_rsa /home/ec2-user/.ssh/tower_rsa.pub /home/ec2-user/.ssh/authorized_keys
 
             cd /tmp
 
@@ -124,19 +204,59 @@ Resources:
 
             pushd ansible-tower-setup-3.7.3-1
 
-            # Configure inventory
-            ADMIN_PASSWORD=${admin_password}
-            PG_PASSWORD=${database_admin_password}
+            mv inventory inventory.orig
 
-            sed -i "s|admin_password.*|admin_password='$ADMIN_PASSWORD'|" inventory
+            TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+            MY_HOSTNAME=`curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-hostname`
 
-            sed -i "s|pg_password.*|pg_password='$PG_PASSWORD'|" inventory
+            ####
+            cat <<EOF > inventory
+            [tower]
+            $MY_HOSTNAME
+            ${tower2name}
+            ${tower3name}
+
+            [database]
+
+            [all:vars]
+            ansible_ssh_private_key_file=/home/ec2-user/.ssh/tower_rsa
+            ansible_connection=ssh
+            ansible_user=ec2-user
+            ansible_become=yes
+            ansible_become_method=sudo
+            ansible_ssh_extra_args='-o StrictHostKeyChecking=no'
+
+            tower_firewall_type='firewalld'
+
+            admin_password=${admin_password}
+
+            pg_host="${dbhost}"
+            pg_port="${dbport}"
+
+            pg_database='awx'
+            pg_username='awx'
+            pg_password=${database_admin_password}
+            pg_sslmode='prefer'  # set to 'verify-full' for client-side enforced SSL
+
+            rabbitmq_username='awx'
+            rabbitmq_password=${rmqpass}
+            rabbitmq_cookie=${rmqcookie}
+            EOF
+            ####
 
             # Install Ansible Tower
-            #./setup.sh
+            ./setup.sh
 
           - admin_password: !Ref 'TowerAdminPassword'
             database_admin_password: !Ref 'DatabaseAdminPassword'
+            tower2name: !GetAtt TowerInstance2.PrivateDnsName
+            tower3name: !GetAtt TowerInstance3.PrivateDnsName
+            region: !Ref AWS::Region
+            pubkey: !GetAtt 'PrivateKey.PublicKey'
+            dbhost: !GetAtt 'TowerDBInstance.Endpoint.Address'
+            dbport: !GetAtt 'TowerDBInstance.Endpoint.Port'
+            rmqpass: !Ref 'RabbitMQPassword'
+            rmqcookie: !Ref 'RabbitMQCookie'
 
   TowerInstance2:
     Type: AWS::EC2::Instance
@@ -152,11 +272,21 @@ Resources:
           - !Ref "TowerExternalSecurityGroup"
           SubnetId: !Ref "PublicSubnet2"
       UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash -xe
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash -xe
 
-          # Ensure Ansible is installed
-          dnf -y install ansible
+            # Install EPEL for Ansible
+            dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+            # Ensure Ansible is installed
+            dnf -y install ansible
+
+            echo "${pubkey}" > /home/ec2-user/.ssh/tower_rsa.pub
+            echo "${pubkey}" >> /home/ec2-user/.ssh/authorized_keys
+            chown ec2-user.ec2-user /home/ec2-user/.ssh/tower_rsa.pub
+
+          - pubkey: !GetAtt 'PrivateKey.PublicKey'
 
   TowerInstance3:
     Type: AWS::EC2::Instance
@@ -172,11 +302,21 @@ Resources:
             - !Ref "TowerExternalSecurityGroup"
           SubnetId: !Ref "PublicSubnet3"
       UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash -xe
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash -xe
 
-          # Ensure Ansible is installed
-          dnf -y install ansible
+            # Install EPEL for Ansible
+            dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+            # Ensure Ansible is installed
+            dnf -y install ansible
+
+            echo "${pubkey}" > /home/ec2-user/.ssh/tower_rsa.pub
+            echo "${pubkey}" >> /home/ec2-user/.ssh/authorized_keys
+            chown ec2-user.ec2-user /home/ec2-user/.ssh/tower_rsa.pub
+
+          - pubkey: !GetAtt 'PrivateKey.PublicKey'
 
   TowerTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
