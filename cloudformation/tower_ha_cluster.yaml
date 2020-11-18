@@ -124,20 +124,29 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Tower Cluster Security Group
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          ToPort: 443
-          FromPort: 443
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: "-1"
-          SourceSecurityGroupName: default
-          ToPort: 65535
-          FromPort: 0
       VpcId: !Ref 'VpcId'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        ToPort: 443
+        FromPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: "-1"
+        SourceSecurityGroupName: default
+        ToPort: 65535
+        FromPort: 0
+
+  TowerExternalSGIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref TowerExternalSecurityGroup
+      IpProtocol: "-1"
+      ToPort: 65535
+      FromPort: 0
+      SourceSecurityGroupId: !GetAtt TowerExternalSecurityGroup.GroupId
 
   TowerDBInstance:
     Type: AWS::RDS::DBInstance
