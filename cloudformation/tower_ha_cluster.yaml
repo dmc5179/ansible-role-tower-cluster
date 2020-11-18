@@ -68,6 +68,11 @@ Parameters:
     Description: Volume Size of the Root EBS
     Type: Number
 
+  TowerLicenseKeyJson:
+    Default: '{}'
+    Description: Tower License file json data
+    Type: String
+
 Mappings:
   RegionMap:
     us-east-1:
@@ -256,6 +261,12 @@ Resources:
             # Install Ansible Tower
             ./setup.sh
 
+            if [ ${#tower_license} -gt 5 ]
+            then
+              LICENSE="{ \"eula_accepter\": true, ${tower_license:1}"
+              curl -k -X POST -u admin:${admin_password} -H "Content-Type: application/json" --data "$(echo)$LICENSE" https://localhost:443/api/v2/config/
+            fi
+
           - admin_password: !Ref 'TowerAdminPassword'
             database_admin_password: !Ref 'DatabaseAdminPassword'
             tower2name: !GetAtt TowerInstance2.PrivateDnsName
@@ -266,6 +277,7 @@ Resources:
             dbport: !GetAtt 'TowerDBInstance.Endpoint.Port'
             rmqpass: !Ref 'RabbitMQPassword'
             rmqcookie: !Ref 'RabbitMQCookie'
+            tower_license: !Ref 'TowerLicenseKeyJson'
 
   TowerInstance2:
     Type: AWS::EC2::Instance
