@@ -131,7 +131,7 @@ Resources:
             mkdir -p /etc/awx-ssl/
 
             ## Make a self-signed ssl certificate
-            openssl req -subj "/CN=awx.${zone_name}/O=AWX/C=AWX" \
+            openssl req -subj "/CN=awx.${zone_name}/O=AWX/C=AX" \
             	-new -newkey rsa:2048 \
             	-sha256 -days 1365 \
             	-nodes -x509 \
@@ -146,14 +146,13 @@ Resources:
             ## Pass the full path of awx-bundled-key.crt file to ssl_certificate variable in inventory.
             sed -i -E "s|^#([[:space:]]?)ssl_certificate=|ssl_certificate=/etc/awx-ssl/awx-bundled-key.crt|g" installer/inventory
 
-            pushd installer
-
             ## Define the default admin username
             #sed -i "s|^admin_user=.*|admin_user=awx-admin|g" installer/inventory
 
             ## Set a password for the admin
             sed -i "s|^admin_password=.*|admin_password=${admin_password}|g" installer/inventory
 
+            pushd installer
 
             ansible-playbook -i inventory install.yml
 
