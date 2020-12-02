@@ -1,0 +1,199 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create Ansible AWX single node cluster
+
+Parameters:
+
+#  VpcCidr:
+#    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-4]))$
+#    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-24.
+#    Default: 10.0.0.0/16
+#    Description: CIDR block for VPC.
+#    Type: String
+
+  VpcId:
+    Description: The VPC-scoped resources will belong to this VPC.
+    Type: AWS::EC2::VPC::Id
+
+  HostedZoneId:
+    Description: The Route53 public zone ID to register the targets with, such as Z21IXYZABCZ2A4.
+    Type: String
+
+  HostedZoneName:
+    Description: The Route53 zone to register the targets with, such as example.com. Omit the trailing period.
+    Type: String
+    Default: "example.com"
+
+  AWXAdminPassword:
+    Description: Ansible AWX admin password.
+    Type: String
+    Default: "redhat2020"
+
+  DatabaseAdminPassword:
+    Description: Database Admin Password. No special characters.
+    Type: String
+    Default: "redhat2020"
+
+  PublicSubnet:
+    Description: The internet-facing subnet.
+    Type: AWS::EC2::Subnet::Id
+
+  InstanceType:
+    Default: t2.large
+    Description: Instance type of the EC2 Instance
+    Type: String
+
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+
+  RootVolumeSize:
+    Default: '50'
+    Description: Volume Size of the Root EBS
+    Type: Number
+
+Mappings: 
+  RegionMap: 
+    us-east-1: 
+      "HVM64": ""
+    us-east-2:
+      "HVM64": "ami-000e7ce4dd68e7a11"
+    us-west-1: 
+      "HVM64": ""
+    eu-west-1: 
+      "HVM64": ""
+
+Resources:
+
+  AWXSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: AWX Cluster Security Group
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        ToPort: 443
+        FromPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        ToPort: 80
+        FromPort: 80
+        CidrIp: 0.0.0.0/0
+      VpcId: !Ref VpcId
+
+  AWXInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", HVM64]
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: "true"
+        DeviceIndex: "0"
+        GroupSet:
+        - !Ref "AWXSecurityGroup"
+        SubnetId: !Ref "PublicSubnet"
+      UserData:
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash -xe
+            pushd /tmp
+            curl -L -O https://github.com/ansible/awx/archive/15.0.1.tar.gz
+            curl -L -O https://github.com/docker/compose/releases/download/1.27.4/docker-compose-Linux-x86_64
+
+            yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+            yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            yum -y install make vim python3 python3-pip docker-ce docker-ce-cli containerd.io iptables ansible
+            systemctl enable --now docker
+            python3 -m pip install --upgrade pip
+            python3 -m pip install docker-compose
+
+            tar -xzf 15.0.1.tar.gz
+            mv docker-compose-Linux-x86_64 /usr/local/bin/
+            chmod 0755 /usr/local/bin/docker-compose
+            restorecon -v /usr/local/bin/docker-compose
+
+            ## Download and extract awx-logos repository. 
+            ## (We could use git to clone the repo; but it requires git to be installed on the host.)
+            curl -L -o awx-logos.tar.gz https://github.com/ansible/awx-logos/archive/master.tar.gz
+            tar xvfz awx-logos.tar.gz
+
+            ## Rename awx-logos-master folder as awx-logos  
+            mv awx-logos-master awx-logos
+
+            ## Remove tarball
+            rm -f *awx*.tar.gz
+
+            ## Create awx-ssl folder in /etc.
+            mkdir -p /etc/awx-ssl/
+
+            ## Make a self-signed ssl certificate
+            openssl req -subj "/CN=awx.${zone_name}/O=AWX/C=AWX" \
+            	-new -newkey rsa:2048 \
+            	-sha256 -days 1365 \
+            	-nodes -x509 \
+            	-keyout /etc/awx-ssl/awx.key \
+            	-out /etc/awx-ssl/awx.crt
+
+            ## Merge awx.key and awx.crt files
+            cat /etc/awx-ssl/awx.key /etc/awx-ssl/awx.crt > /etc/awx-ssl/awx-bundled-key.crt
+
+            pushd awx-15.0.1
+
+            ## Pass the full path of awx-bundled-key.crt file to ssl_certificate variable in inventory.
+            sed -i -E "s|^#([[:space:]]?)ssl_certificate=|ssl_certificate=/etc/awx-ssl/awx-bundled-key.crt|g" installer/inventory
+
+            pushd installer
+
+            ## Define the default admin username
+            #sed -i "s|^admin_user=.*|admin_user=awx-admin|g" installer/inventory
+
+            ## Set a password for the admin
+            sed -i "s|^admin_password=.*|admin_password=${admin_password}|g" installer/inventory
+
+
+            ansible-playbook -i inventory install.yml
+
+          - admin_password: !Ref 'AWXAdminPassword'
+            database_admin_password: !Ref 'DatabaseAdminPassword'
+            zone_name: !Ref 'HostedZoneName'
+
+  AWXIPAddress:
+    Type: AWS::EC2::EIP
+
+  AWXIPAssoc:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref 'AWXInstance'
+      EIP: !Ref 'AWXIPAddress'
+
+  AWXDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref 'HostedZoneId'
+      Comment: AWX Instance.
+      Name: !Join [ '', [ "awx.", !Ref 'HostedZoneName' ] ]
+      Type: A
+      TTL: '900'
+      ResourceRecords:
+      - !Ref AWXIPAddress
+
+Outputs:
+  AWXInstanceId:
+    Description: AWX Instance ID.
+    Value: !Ref AWXInstance
+
+  BootstrapPublicIp:
+    Description: The awx node public IP address.
+    Value: !GetAtt AWXInstance.PublicIp
+
+  BootstrapPrivateIp:
+    Description: The awx node private IP address.
+    Value: !GetAtt AWXInstance.PrivateIp
+
+  AWXIPAddress:
+    Description: IP address of the newly created AWX Instance
+    Value: !Ref 'AWXIPAddress'
